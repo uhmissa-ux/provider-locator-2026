@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provider Data Converter</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f8f9fa;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: white;
+      padding: 30px;
+      margin-bottom: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-left: 4px solid #0066cc;
+    }
+
+    .header h1 {
+      color: #0066cc;
+      font-size: 32px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .file-info {
+      color: #666;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .file-info strong {
+      color: #333;
+    }
+
+    .stats-box {
+      background: #e8f4f8;
+      padding: 15px 25px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .stats-box .number {
+      font-size: 36px;
+      font-weight: 700;
+      color: #0066cc;
+      display: block;
+    }
+
+    .stats-box .label {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .upload-btn {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .upload-btn:hover {
+      background: #0052a3;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    @media (max-width: 1024px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid #e0e0e0;
+      background: #fafbfc;
+    }
+
+    .panel-header h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 15px 10px 40px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #0066cc;
+    }
+
+    .search-wrapper {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      color: #999;
+    }
+
+    .select-input {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .select-input:focus {
+      outline: none;
+      border-color: #0066cc;
+    }
+
+    .filter-info {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .provider-list {
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .provider-item {
+      padding: 20px 25px;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.2s;
+    }
+
+    .provider-item:hover {
+      background: #fafbfc;
+    }
+
+    .provider-item:last-child {
+      border-bottom: none;
+    }
+
+    .provider-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .badge-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-specialty {
+      background: #e8f4f8;
+      color: #0066cc;
+    }
+
+    .badge-accepting {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .badge-not-accepting {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .provider-details {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.8;
+    }
+
+    .provider-details .practice-name {
+      font-weight: 500;
+      color: #333;
+    }
+
+    .provider-details .phone {
+      color: #0066cc;
+      margin-top: 8px;
+      display: block;
+    }
+
+    .code-output {
+      padding: 20px 25px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-copy {
+      background: #e8f4f8;
+      color: #0066cc;
+      border: 1px solid #0066cc;
+    }
+
+    .btn-copy:hover {
+      background: #0066cc;
+      color: white;
+    }
+
+    .btn-copy.copied {
+      background: #d4edda;
+      color: #155724;
+      border-color: #28a745;
+    }
+
+    .btn-download {
+      background: #f0f0f0;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+
+    .btn-download:hover {
+      background: #e0e0e0;
+    }
+
+    .code-preview {
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 15px;
+      max-height: 650px;
+      overflow: auto;
+    }
+
+    .code-preview pre {
+      margin: 0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #333;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .info-box {
+      background: #e8f4f8;
+      border-left: 4px solid #0066cc;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 15px;
+    }
+
+    .info-box h4 {
+      color: #0066cc;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .info-box ol {
+      margin-left: 20px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .info-box ol li {
+      margin-bottom: 4px;
+    }
+
+    .info-box code {
+      background: rgba(0,102,204,0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef } = React;
+
+    // SVG Icons
+    const Upload = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    );
+
+    const Download = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    );
+
+    const Copy = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+    );
+
+    const Check = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    );
+
+    const Search = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+      </svg>
+    );
+
+    function ProviderConverter() {
+      const [providers, setProviders] = useState([]);
+      const [jsCode, setJsCode] = useState('');
+      const [copied, setCopied] = useState(false);
+      const [searchTerm, setSearchTerm] = useState('');
+      const [filterSpecialty, setFilterSpecialty] = useState('All');
+      const [fileName, setFileName] = useState('No file loaded');
+      const fileInputRef = useRef(null);
+
+      const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          setFileName(file.name);
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const csvText = e.target.result;
+            parseCSVData(csvText);
+          };
+          reader.readAsText(file);
+        }
+      };
+
+      const parseCSVData = (csvText) => {
+        const lines = csvText.split('\n').filter(line => line.trim());
+        const headers = parseCSVLine(lines[0]);
+        
+        const parsedProviders = lines.slice(1).map(line => {
+          const values = parseCSVLine(line);
+          const provider = {};
+          headers.forEach((header, index) => {
+            provider[header] = values[index] || '';
+          });
+          return provider;
+        });
+        
+        setProviders(parsedProviders);
+        generateJavaScriptCode(parsedProviders);
+      };
+
+      const parseCSVLine = (line) => {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const generateJavaScriptCode = (data) => {
+        const formatField = (value) => {
+          if (!value || value.trim() === '') {
+            return '';
+          }
+          return `"${value}"`;
+        };
+
+        const code = `const csvData = \`"ID","Last Name","First Name","Degree","Gender","Specialty","Practice","Practice:Main Line","Practice:Fax","Accepting New Patients","Practice:Address","Practice:Address 2","Practice:City","Practice:Zip","Website Photo Path","Practice:Latitude","Practice:Longitude","Member Status"
+${data.map(p => 
+  `${formatField(p.ID)},${formatField(p['Last Name'])},${formatField(p['First Name'])},${formatField(p.Degree)},${formatField(p.Gender)},${formatField(p.Specialty)},${formatField(p.Practice)},${formatField(p['Practice:Main Line'])},${formatField(p['Practice:Fax'])},${formatField(p['Accepting New Patients'])},${formatField(p['Practice:Address'])},${formatField(p['Practice:Address 2'])},${formatField(p['Practice:City'])},${formatField(p['Practice:Zip'])},${formatField(p['Website Photo Path'])},${formatField(p['Practice:Latitude'])},${formatField(p['Practice:Longitude'])},${formatField(p['Member Status'])}`
+).join('\n')}\`;`;
+        
+        setJsCode(code);
+      };
+
+      const copyToClipboard = () => {
+        navigator.clipboard.writeText(jsCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      };
+
+      const downloadFile = () => {
+        const blob = new Blob([jsCode], { type: 'text/javascript' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'provider-data.js';
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const specialties = ['All', ...new Set(providers.map(p => p.Specialty))].sort();
+
+      const filteredProviders = providers.filter(p => {
+        const matchesSearch = !searchTerm || 
+          (p['Last Name'] && p['Last Name'].toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (p['First Name'] && p['First Name'].toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (p.Practice && p.Practice.toLowerCase().includes(searchTerm.toLowerCase()));
+        const matchesSpecialty = filterSpecialty === 'All' || p.Specialty === filterSpecialty;
+        return matchesSearch && matchesSpecialty;
+      });
+
+      return (
+        <div className="container">
+          <div className="header">
+            <div className="header-top">
+              <div>
+                <h1>Provider Data Converter</h1>
+                <p>Convert CSV to JavaScript format for interactive maps</p>
+                <div className="file-info">
+                  Current file: <strong>{fileName}</strong>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <button onClick={() => fileInputRef.current?.click()} className="upload-btn">
+                  <Upload size={20} />
+                  Upload Sheet
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <div className="stats-box">
+                  <span className="number">{providers.length}</span>
+                  <span className="label">Total Providers</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="content-grid">
+            {/* Provider List Panel */}
+            <div className="panel">
+              <div className="panel-header">
+                <h2>Provider Preview</h2>
+                
+                {providers.length > 0 && (
+                  <div>
+                    <div className="search-wrapper">
+                      <Search size={18} className="search-icon" />
+                      <input
+                        type="text"
+                        placeholder="Search by name or practice..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input"
+                      />
+                    </div>
+                    
+                    <select
+                      value={filterSpecialty}
+                      onChange={(e) => setFilterSpecialty(e.target.value)}
+                      className="select-input"
+                    >
+                      {specialties.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+
+                    <div className="filter-info">
+                      Showing {filteredProviders.length} of {providers.length} providers
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {providers.length === 0 ? (
+                <div className="empty-state">
+                  <Upload size={64} />
+                  <p>Click "Upload Sheet" to get started</p>
+                </div>
+              ) : (
+                <div className="provider-list">
+                  {filteredProviders.map((provider, index) => (
+                    <div key={index} className="provider-item">
+                      <div className="provider-name">
+                        {provider['First Name']} {provider['Last Name']}, {provider.Degree}
+                      </div>
+                      <div className="badge-group">
+                        <span className="badge badge-specialty">{provider.Specialty}</span>
+                        <span className={`badge ${provider['Accepting New Patients'] === 'True' ? 'badge-accepting' : 'badge-not-accepting'}`}>
+                          {provider['Accepting New Patients'] === 'True' ? '✓ Accepting Patients' : 'Not Accepting'}
+                        </span>
+                      </div>
+                      <div className="provider-details">
+                        <div className="practice-name">{provider.Practice}</div>
+                        <div>
+                          {provider['Practice:Address']}
+                          {provider['Practice:Address 2'] && `, ${provider['Practice:Address 2']}`}
+                        </div>
+                        <div>
+                          {provider['Practice:City']}, RI {provider['Practice:Zip']}
+                        </div>
+                        <span className="phone">📞 {provider['Practice:Main Line']}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Code Output Panel */}
+            <div className="panel">
+              <div className="panel-header">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h2>Generated Code</h2>
+                  {jsCode && (
+                    <div className="button-group">
+                      <button onClick={copyToClipboard} className={`btn btn-copy ${copied ? 'copied' : ''}`}>
+                        {copied ? <Check size={16} /> : <Copy size={16} />}
+                        {copied ? 'Copied!' : 'Copy'}
+                      </button>
+                      <button onClick={downloadFile} className="btn btn-download">
+                        <Download size={16} />
+                        Download
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <p style={{ color: '#666', fontSize: '14px' }}>
+                  {jsCode ? 'Copy this code and paste it into your HTML file, or download as a .js file' : 'Upload a CSV file to generate the code'}
+                </p>
+              </div>
+
+              <div className="code-output">
+                {jsCode ? (
+                  <>
+                    <div className="code-preview">
+                      <pre><code>{jsCode}</code></pre>
+                    </div>
+                    
+                    <div className="info-box">
+                      <h4>💡 Usage Instructions:</h4>
+                      <ol>
+                        <li>Copy the generated code above</li>
+                        <li>Paste it into your HTML file inside a &lt;script&gt; tag</li>
+                        <li>The data will be available as <code>csvData</code></li>
+                        <li>Parse it using your existing CSV parser function</li>
+                      </ol>
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty-state">
+                    <div style={{ fontSize: '48px', marginBottom: '15px' }}>📄</div>
+                    <p>No code generated yet</p>
+                    <p style={{ fontSize: '14px', color: '#999', marginTop: '8px' }}>Upload a CSV file to begin</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<ProviderConverter />, document.getElementById('root'));
+  </script>
+</body>
+</html>
